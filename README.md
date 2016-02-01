@@ -9,7 +9,7 @@ Credit goes to [Dan Minut](http://www.mangareader.com/dmclglcd.html) for providi
 2. Altitude
 3. Throttle
 
-!(Current ScreenShot Status)[Screenshots/Screenshot_1.jpg]
+![Current ScreenShot Status](https://raw.githubusercontent.com/nrobison/WarThunderApplet/develop/Screenshots/Screenshot_1.JPG)
 ### Known Issues
 1. Altitude will not display on Bombers (indicators not returning from War Thunder)
 2. Aircraft Name as well not returning on Bombers (see above)
