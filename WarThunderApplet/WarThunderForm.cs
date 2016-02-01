@@ -6,9 +6,12 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Newtonsoft.Json;
 
 namespace WarThunderApplet
 {
@@ -23,10 +26,16 @@ namespace WarThunderApplet
         private int config = 0;
         private int cnt = 0;
         private bool direction = false;
-        private bool continueRun = true;
+
+        private WarThunderInfoHelper _infoHelper;
+        private bool getNewMap = true;
+        private Dictionary<string, string> stateInfo;
+        private Dictionary<string, string> indicatorInfo;
         public WarThunderForm()
         {
             InitializeComponent();
+            _infoHelper = new WarThunderInfoHelper();
+            
         }
 
         private void WarThunderForm_Load(object sender, EventArgs e)
@@ -81,6 +90,9 @@ namespace WarThunderApplet
                     {
 
                         DMcLgLCD.LcdSetConfigCallback(cfgCallback);
+                        LoadTimer.Interval = 100;
+                        LoadTimer.Enabled = true;
+
 
                     }
                 }
@@ -92,20 +104,72 @@ namespace WarThunderApplet
             config = cfgConnection;
         }
 
-        private bool IsConnectedToWarThunder()
+        private async void LoadTimer_Tick(object sender, EventArgs e)
         {
-            
-            return true;
+            if (await _infoHelper.IsConnectedToWarThunder())
+            {
+                await ProcessStateInfo();
+                if (stateInfo["valid"] == "false")
+                {
+                    //End of Match stop trying to update and Grab new map when we get valid info
+                    getNewMap = true;
+                    return;
+                }
+                await ProcessIndicatorInfo();
+                if (getNewMap)
+                {
+                    var mapImage = await _infoHelper.GetMap();
+                    getNewMap = false;
+                    if (mapImage != null) Map.Image = mapImage;
+                }
+                    Screen = new Bitmap(320, 240);
+                    Graphics g = Graphics.FromImage(Screen);
+                    mainPanel.DrawToBitmap(Screen, new Rectangle(0, 0, Screen.Width, Screen.Height));
+                    DMcLgLCD.LcdUpdateBitmap(device, Screen.GetHbitmap(), DMcLgLCD.LGLCD_DEVICE_QVGA);
+            }
+         }
+
+        private async Task ProcessStateInfo()
+        {
+
+            stateInfo = await _infoHelper.GetInfo("state");
+            if (stateInfo["valid"] == "false")
+            {
+                //End of Match stop trying to update and Grab new map when we get valid info
+                getNewMap = true;
+                return;
+            }
+            speedOutput.Text = (stateInfo["TAS, km/h"] + " km/h");
+            throttleOutput.Text = stateInfo["throttle 1, %"] + "%";
+
         }
 
-        private void GetMap()
+        private async Task ProcessIndicatorInfo()
         {
-            
-        }
+            indicatorInfo = await _infoHelper.GetInfo("indicators");
+            if (indicatorInfo["valid"] == "true")
+            {
+                if (indicatorInfo.ContainsKey("altitude_10k"))
+                {
+                    var kmAltitudeInfo = Math.Round(Convert.ToDouble(indicatorInfo["altitude_10k"])/1.60934, 2,
+                        MidpointRounding.AwayFromZero);
+                    altitudeOutput.Text = (kmAltitudeInfo + " km");
+                }
+                else
+                {
+                    var kmAltitudeInfo = Math.Round(Convert.ToDouble(indicatorInfo["altitude_hour"]) / 1.60934, 2,
+                       MidpointRounding.AwayFromZero);
+                    altitudeOutput.Text = (kmAltitudeInfo + " m");
+                }
+                aircraftOutput.Text = indicatorInfo["type"];
 
-        private void LoadTimer_Tick(object sender, EventArgs e)
-        {
-
+            }
+            else
+            {
+                aircraftOutput.Text = "N/A";
+                altitudeOutput.Text = "N/A";
+            }
         }
     }
 }
+
