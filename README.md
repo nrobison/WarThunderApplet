@@ -13,7 +13,7 @@ Credit goes to [Dan Minut](http://www.mangareader.com/dmclglcd.html) for providi
 ### Known Issues
 1. Altitude will not display on Bombers (indicators not returning from War Thunder)
 2. Aircraft Name as well not returning on Bombers (see above)
-3. 
+3. json return from War Thunder not completely consistant
 
 ###Logitech C# Wrappers are lacking see above link and Info
 ~~For the needed  C++ dll files see [Logitech G Developers Lab](http://gaming.logitech.com/en-us/developers) and download Game Panel SDK.
