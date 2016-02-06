@@ -43,7 +43,10 @@ namespace WarThunderApplet
                 try
                 {
                     var stream = new MemoryStream(webClient.DownloadData(baseUrl + "map.img"));
-                    return Image.FromStream(stream);
+                    var map = Image.FromStream(stream);
+                    stream.Close();
+                    stream.Dispose();
+                    return map;
                 }
                 catch (Exception e)
                 {

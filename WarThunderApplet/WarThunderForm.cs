@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Newtonsoft.Json;
+using WarThunderApplet.Models;
 
 namespace WarThunderApplet
 {
@@ -31,10 +32,12 @@ namespace WarThunderApplet
         private bool getNewMap = true;
         private Dictionary<string, string> stateInfo;
         private Dictionary<string, string> indicatorInfo;
-        private Bitmap MapImage;
+        private Image returnImage;
+        private Bitmap MapBitmap;
+        private Graphics graphics;
         public WarThunderForm()
         {
-            
+            this.Hide();   
             InitializeComponent();
 
             _infoHelper = new WarThunderInfoHelper();
@@ -123,16 +126,16 @@ namespace WarThunderApplet
                     await ProcessIndicatorInfo();
                     if (getNewMap)
                     {
-                        var mapImage = await _infoHelper.GetMap();
+                        returnImage = await _infoHelper.GetMap();
                         getNewMap = false;
-                        if (mapImage != null)
-                        {
-                            Map.Image = mapImage;
+                        if (returnImage != null)
+                        {               
+                            MapBitmap = new Bitmap(returnImage);
+                            Map.Image = returnImage;
                         }
                     }
                     await ProcessMapLocations();
                     Screen = new Bitmap(320, 240);
-                    Graphics g = Graphics.FromImage(Screen);
                     mainPanel.DrawToBitmap(Screen, new Rectangle(0, 0, Screen.Width, Screen.Height));
                     DMcLgLCD.LcdUpdateBitmap(device, Screen.GetHbitmap(), DMcLgLCD.LGLCD_DEVICE_QVGA);
                 }
@@ -155,13 +158,13 @@ namespace WarThunderApplet
             }
             speedOutput.Text = (stateInfo["TAS, km/h"] + " km/h");
             throttleOutput.Text = stateInfo["throttle 1, %"] + "%";
-            if (stateInfo.ContainsKey("oil temp 1, C")) oil1TempOutput.Text = stateInfo["oil temp 1, C"] + "°C";
+            if (stateInfo.ContainsKey("oil temp 1, C")) oil1TempOutput.Text = stateInfo["oil temp 1, C"] + " °C";
             else oilTemp1Label.Text = "N/A";
-            if (stateInfo.ContainsKey("oil temp 2, C")) oil2TempOutput.Text = stateInfo["oil temp 2, C"] + "°C";
+            if (stateInfo.ContainsKey("oil temp 2, C")) oil2TempOutput.Text = stateInfo["oil temp 2, C"] + " °C";
             else oil2TempOutput.Text = "N/A";
-            if (stateInfo.ContainsKey("water temp 1, C")) water1TempOutput.Text = stateInfo["water temp 1, C"] + "°C";
+            if (stateInfo.ContainsKey("water temp 1, C")) water1TempOutput.Text = stateInfo["water temp 1, C"] + " °C";
             else water1TempOutput.Text = "N/A";
-            if(stateInfo.ContainsKey("water temp 2, C")) water2TempOutput.Text = stateInfo["water temp 2, C"] + "°C";
+            if(stateInfo.ContainsKey("water temp 2, C")) water2TempOutput.Text = stateInfo["water temp 2, C"] + " °C";
             flapsOutput.Text = stateInfo["flaps, %"] + "%";
 
 
@@ -220,7 +223,35 @@ namespace WarThunderApplet
             var mapObjects = await _infoHelper.GetMapObjects();
             //Return if not in match
             if (mapObjects.Count == 0) return;
-            var playerInfo = mapObjects.FirstOrDefault(z => z.Type.Equals("Player"));
+            foreach (var mapObject in mapObjects)
+            {
+                if (mapObject.Type == "airfield") await DrawAirfieldOnMap(mapObject);
+
+            }
+            //Get Player Location then get section of Map
+            MapBitmap = new Bitmap(returnImage);
+            var playerInfo = mapObjects.FirstOrDefault(z => z.Icon.Equals("Player"));
+            if (playerInfo == null) return;
+            var xCords = Convert.ToInt32(returnImage.Width * playerInfo.X) - (155/2);
+            var yCords = Convert.ToInt32(returnImage.Height *playerInfo.Y) - (133 /2);
+            var areaOfMap = new Rectangle(xCords,yCords,Map.Width,Map.Height);
+            Map.Image = MapBitmap.Clone(areaOfMap, MapBitmap.PixelFormat);
+            MapBitmap.Dispose();
+
+        }
+
+        private async Task DrawAirfieldOnMap(MapObjectModel model)
+        {
+            graphics = Graphics.FromImage(returnImage);
+            var colorOfAirfield = ColorTranslator.FromHtml(model.Color);//Color.FromArgb(model.Color[0],model.Color[1],model.Color[2]);
+            var brush = new SolidBrush(colorOfAirfield);
+            var xCords = (float)(returnImage.Width*model.SX);
+            var yCords = (float)(returnImage.Height*model.SY);
+            //var width = (float) (((model.SX - model.EX)*returnImage.Width) - xCords);
+            //var height = (float)(((model.SY - model.EY) * returnImage.Height) - yCords);
+            var rect = new RectangleF(xCords,yCords,5,5);
+            graphics.FillRectangle(brush,rect);
+            graphics.Dispose();
         }
 
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace WarThunderApplet.Models
 {
@@ -10,9 +11,9 @@ namespace WarThunderApplet.Models
     {
         //Mapping based on /map_obj.json
         public string Type { get; set; }
+        //Need RGB so no on this color so convert from this as two properties are name color 
         public string Color { get; set; }
-        //Possibly not needed
-        //public int[] Colors { get; set; }
+       //public int[] Color { get; set; }
         //Cords for planes and vehicles 
         public double X { get; set; }
         public double Y { get; set; }
