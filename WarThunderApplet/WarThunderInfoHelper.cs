@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using WarThunderApplet.Models;
 
 namespace WarThunderApplet
 {
@@ -50,6 +51,16 @@ namespace WarThunderApplet
                 }
             }
         }
+
+        public async Task<List<MapObjectModel>> GetMapObjects()
+        {
+            return
+                JsonConvert.DeserializeObject<List<MapObjectModel>>(
+                    await _httpClient.GetStringAsync(baseUrl + "map_obj.json"));
+        }
+
+
+    
 
     }
 

@@ -31,9 +31,12 @@ namespace WarThunderApplet
         private bool getNewMap = true;
         private Dictionary<string, string> stateInfo;
         private Dictionary<string, string> indicatorInfo;
+        private Bitmap MapImage;
         public WarThunderForm()
         {
+            
             InitializeComponent();
+
             _infoHelper = new WarThunderInfoHelper();
             
         }
@@ -106,28 +109,39 @@ namespace WarThunderApplet
 
         private async void LoadTimer_Tick(object sender, EventArgs e)
         {
-            if (await _infoHelper.IsConnectedToWarThunder())
+            try
             {
-                await ProcessStateInfo();
-                if (stateInfo["valid"] == "false")
+                if (await _infoHelper.IsConnectedToWarThunder())
                 {
-                    //End of Match stop trying to update and Grab new map when we get valid info
-                    getNewMap = true;
-                    return;
-                }
-                await ProcessIndicatorInfo();
-                if (getNewMap)
-                {
-                    var mapImage = await _infoHelper.GetMap();
-                    getNewMap = false;
-                    if (mapImage != null) Map.Image = mapImage;
-                }
+                    await ProcessStateInfo();
+                    if (stateInfo["valid"] == "false")
+                    {
+                        //End of Match stop trying to update and Grab new map when we get valid info
+                        getNewMap = true;
+                        return;
+                    }
+                    await ProcessIndicatorInfo();
+                    if (getNewMap)
+                    {
+                        var mapImage = await _infoHelper.GetMap();
+                        getNewMap = false;
+                        if (mapImage != null)
+                        {
+                            Map.Image = mapImage;
+                        }
+                    }
+                    await ProcessMapLocations();
                     Screen = new Bitmap(320, 240);
                     Graphics g = Graphics.FromImage(Screen);
                     mainPanel.DrawToBitmap(Screen, new Rectangle(0, 0, Screen.Width, Screen.Height));
                     DMcLgLCD.LcdUpdateBitmap(device, Screen.GetHbitmap(), DMcLgLCD.LGLCD_DEVICE_QVGA);
+                }
             }
-         }
+            catch (Exception exception)
+            {
+                Debug.WriteLine(exception.ToString());
+            }
+        }
 
         private async Task ProcessStateInfo()
         {
@@ -141,12 +155,22 @@ namespace WarThunderApplet
             }
             speedOutput.Text = (stateInfo["TAS, km/h"] + " km/h");
             throttleOutput.Text = stateInfo["throttle 1, %"] + "%";
+            if (stateInfo.ContainsKey("oil temp 1, C")) oil1TempOutput.Text = stateInfo["oil temp 1, C"] + "°C";
+            else oilTemp1Label.Text = "N/A";
+            if (stateInfo.ContainsKey("oil temp 2, C")) oil2TempOutput.Text = stateInfo["oil temp 2, C"] + "°C";
+            else oil2TempOutput.Text = "N/A";
+            if (stateInfo.ContainsKey("water temp 1, C")) water1TempOutput.Text = stateInfo["water temp 1, C"] + "°C";
+            else water1TempOutput.Text = "N/A";
+            if(stateInfo.ContainsKey("water temp 2, C")) water2TempOutput.Text = stateInfo["water temp 2, C"] + "°C";
+            flapsOutput.Text = stateInfo["flaps, %"] + "%";
+
 
         }
 
         private async Task ProcessIndicatorInfo()
         {
             indicatorInfo = await _infoHelper.GetInfo("indicators");
+            if (!indicatorInfo.ContainsKey("valid")) return;
             if (indicatorInfo["valid"] == "true")
             {
                 if (indicatorInfo.ContainsKey("altitude_10k"))
@@ -155,11 +179,28 @@ namespace WarThunderApplet
                         MidpointRounding.AwayFromZero);
                     altitudeOutput.Text = (kmAltitudeInfo + " km");
                 }
-                else
+//                else
+//                {
+//                    //This isn't what we want. 
+//                    if (indicatorInfo.ContainsKey("altitude_hour"))
+//                    {
+//                        var kmAltitudeInfo = Math.Round(Convert.ToDouble(indicatorInfo["altitude_hour"])/1.60934, 2,
+//                            MidpointRounding.AwayFromZero);
+//                        altitudeOutput.Text = (kmAltitudeInfo + " m");
+//                    }
+                    else altitudeOutput.Text = "N/A";
+
+//                }
+                if (indicatorInfo.ContainsKey("water_temperature"))
                 {
-                    var kmAltitudeInfo = Math.Round(Convert.ToDouble(indicatorInfo["altitude_hour"]) / 1.60934, 2,
-                       MidpointRounding.AwayFromZero);
-                    altitudeOutput.Text = (kmAltitudeInfo + " m");
+                    var waterTemp =
+                        Math.Round(Convert.ToDouble(indicatorInfo["water_temperature"]), 2, MidpointRounding.AwayFromZero);
+                    water1TempOutput.Text = waterTemp.ToString() +  " °C";
+                }
+                if (indicatorInfo.ContainsKey("oil_temperature"))
+                {
+                    var oilTemp = Math.Round(Convert.ToDouble(indicatorInfo["oil_temperature"]), 2, MidpointRounding.AwayFromZero);
+                   oil1TempOutput.Text = oilTemp.ToString() + " °C";
                 }
                 aircraftOutput.Text = indicatorInfo["type"];
 
@@ -168,8 +209,22 @@ namespace WarThunderApplet
             {
                 aircraftOutput.Text = "N/A";
                 altitudeOutput.Text = "N/A";
+                oil1TempOutput.Text = "N/A";
+                water1TempOutput.Text = "N/A";
             }
+
         }
+
+        private async Task ProcessMapLocations()
+        {
+            var mapObjects = await _infoHelper.GetMapObjects();
+            //Return if not in match
+            if (mapObjects.Count == 0) return;
+            var playerInfo = mapObjects.FirstOrDefault(z => z.Type.Equals("Player"));
+        }
+
+
+
     }
 }
 
