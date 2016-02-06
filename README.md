@@ -17,7 +17,7 @@ I requested some information from Gaijin about the live map (browser). I was pro
 8. Oil Temp 1
 9. Oil Temp 2
 10. Live Map (in progress not complete)
-11. 
+
 ![Current ScreenShot Status](https://raw.githubusercontent.com/nrobison/WarThunderApplet/develop/Screenshots/Screenshot_1.JPG)
 ### Known Issues
 1. Altitude will not display on some aircraft (indicators not returning from War Thunder)
