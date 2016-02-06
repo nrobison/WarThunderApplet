@@ -130,7 +130,7 @@ namespace WarThunderApplet
                         getNewMap = false;
                         if (returnImage != null)
                         {               
-                            MapBitmap = new Bitmap(returnImage);
+                          //  MapBitmap = new Bitmap(returnImage);
                             Map.Image = returnImage;
                         }
                     }
@@ -138,6 +138,7 @@ namespace WarThunderApplet
                     Screen = new Bitmap(320, 240);
                     mainPanel.DrawToBitmap(Screen, new Rectangle(0, 0, Screen.Width, Screen.Height));
                     DMcLgLCD.LcdUpdateBitmap(device, Screen.GetHbitmap(), DMcLgLCD.LGLCD_DEVICE_QVGA);
+                    
                 }
             }
             catch (Exception exception)
@@ -197,12 +198,12 @@ namespace WarThunderApplet
                 if (indicatorInfo.ContainsKey("water_temperature"))
                 {
                     var waterTemp =
-                        Math.Round(Convert.ToDouble(indicatorInfo["water_temperature"]), 2, MidpointRounding.AwayFromZero);
+                        Math.Round(Convert.ToDouble(indicatorInfo["water_temperature"]), 0, MidpointRounding.AwayFromZero);
                     water1TempOutput.Text = waterTemp.ToString() +  " °C";
                 }
                 if (indicatorInfo.ContainsKey("oil_temperature"))
                 {
-                    var oilTemp = Math.Round(Convert.ToDouble(indicatorInfo["oil_temperature"]), 2, MidpointRounding.AwayFromZero);
+                    var oilTemp = Math.Round(Convert.ToDouble(indicatorInfo["oil_temperature"]), 0, MidpointRounding.AwayFromZero);
                    oil1TempOutput.Text = oilTemp.ToString() + " °C";
                 }
                 aircraftOutput.Text = indicatorInfo["type"];
@@ -237,21 +238,21 @@ namespace WarThunderApplet
             var areaOfMap = new Rectangle(xCords,yCords,Map.Width,Map.Height);
             Map.Image = MapBitmap.Clone(areaOfMap, MapBitmap.PixelFormat);
             MapBitmap.Dispose();
+       
 
         }
 
         private async Task DrawAirfieldOnMap(MapObjectModel model)
         {
             graphics = Graphics.FromImage(returnImage);
-            var colorOfAirfield = ColorTranslator.FromHtml(model.Color);//Color.FromArgb(model.Color[0],model.Color[1],model.Color[2]);
+            var colorOfAirfield = ColorTranslator.FromHtml(model.Color);
             var brush = new SolidBrush(colorOfAirfield);
             var xCords = (float)(returnImage.Width*model.SX);
             var yCords = (float)(returnImage.Height*model.SY);
-            //var width = (float) (((model.SX - model.EX)*returnImage.Width) - xCords);
-            //var height = (float)(((model.SY - model.EY) * returnImage.Height) - yCords);
-            var rect = new RectangleF(xCords,yCords,5,5);
+            var rect = new RectangleF(xCords,yCords,5,20);
             graphics.FillRectangle(brush,rect);
             graphics.Dispose();
+            brush.Dispose();
         }
 
 
